@@ -75,14 +75,14 @@
 
 <!-- HEADER -->
 <header style="background:linear-gradient(180deg,#0d1b3e 0%,#0a0e1a 100%); border-bottom:1px solid var(--border); padding:16px 24px;">
-  <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-    <div>
+  <div style="max-width:1400px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;">
+    <div style="text-align:center;">
       <h1 style="margin:0;font-size:22px;font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-        🌐 全球跨境情报平台
+        🌐 阿里巴巴国际站行业全球跨境情报平台
       </h1>
-      <p style="margin:4px 0 0;font-size:12px;color:#64748b;">Accio BP · 覆盖35国 · AI赋能 · 实时数据</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#64748b;">build by Accio Work · 覆盖国家化35国 · 实时数据</p>
     </div>
-    <nav style="display:flex;gap:8px;flex-wrap:wrap;">
+    <nav style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
       <button class="tab-btn active" onclick="switchModule('think-tank')">🌎 跨境智库</button>
       <button class="tab-btn" onclick="switchModule('toolbox')">🔧 工具箱</button>
       <button class="tab-btn" onclick="switchModule('compass')">🎯 市场罗盘</button>
@@ -103,7 +103,7 @@
   </div>
 
   <!-- Sub-tabs -->
-  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;">
     <button class="tab-btn active" id="tt-tab-report" onclick="switchTTTab('report')">🏴 国别报告</button>
     <button class="tab-btn" id="tt-tab-demand" onclick="switchTTTab('demand')">🎯 需求分析</button>
     <button class="tab-btn" id="tt-tab-trend" onclick="switchTTTab('trend')">📈 行业趋势</button>
@@ -188,7 +188,7 @@
     <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;" class="glow-purple">🔧 工具箱 · 出海必备</h2>
     <p style="color:#64748b;font-size:13px;margin:0;">合规查询 · 关税计算 · AI趋势选品 三合一工具</p>
   </div>
-  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;">
     <button class="tab-btn active" id="tool-tab-comply" onclick="switchToolTab('comply')">✅ 合规查询</button>
     <button class="tab-btn" id="tool-tab-tariff" onclick="switchToolTab('tariff')">💵 关税计算</button>
     <button class="tab-btn" id="tool-tab-trending" onclick="switchToolTab('trending')">🔥 AI趋势选品</button>
@@ -296,7 +296,7 @@
     <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;">🗺 全球风险地图</h2>
     <p style="color:#64748b;font-size:13px;margin:0;">实时标注主要航线状态、热点风险区域与海峡通道</p>
   </div>
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center;">
     <button class="tab-btn active" id="map-tab-sea" onclick="toggleMapLayer('sea')">🚢 航运线路</button>
     <button class="tab-btn" id="map-tab-air" onclick="toggleMapLayer('air')">✈ 空运线路</button>
     <button class="tab-btn" id="map-tab-risk" onclick="toggleMapLayer('risk')">⚠ 风险热点</button>
@@ -373,20 +373,22 @@
     <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;">📰 全球贸易实时情报</h2>
     <p style="color:#64748b;font-size:13px;margin:0;">聚合全球权威财经资讯 · AI评分风险等级</p>
   </div>
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;align-items:center;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
       <button class="tab-btn active" id="intel-tab-all" onclick="filterIntel('all')">全部</button>
       <button class="tab-btn" id="intel-tab-trade" onclick="filterIntel('trade')">贸易</button>
       <button class="tab-btn" id="intel-tab-energy" onclick="filterIntel('energy')">能源</button>
       <button class="tab-btn" id="intel-tab-shipping" onclick="filterIntel('shipping')">航运</button>
       <button class="tab-btn" id="intel-tab-policy" onclick="filterIntel('policy')">政策</button>
     </div>
-    <div>
+    <div style="text-align:center;">
       <span style="font-size:12px;color:#64748b;">数据更新: <span id="intel-time"></span></span>
       <span style="font-size:12px;color:#64748b;margin-left:12px;">来源: Reuters · Bloomberg · WTO · IMF · USTR · EU</span>
     </div>
   </div>
-  <button class="btn-primary" style="margin-bottom:16px;" onclick="loadIntel()">🔄 刷新情报流</button>
+  <div style="text-align:center;margin-bottom:16px;">
+    <button class="btn-primary" onclick="loadIntel()">🔄 刷新情报流</button>
+  </div>
   <div id="intel-list"></div>
 </div>
 
