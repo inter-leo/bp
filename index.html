@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球跨境情报平台 · Accio BP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --cyan: #00f5ff; --purple: #a855f7; --green: #10b981;
+    --red: #ef4444; --orange: #f97316; --yellow: #eab308;
+    --bg: #0a0e1a; --card: #0f1629; --border: #1e3a5f;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+  .glow-cyan { text-shadow: 0 0 12px var(--cyan); }
+  .glow-purple { text-shadow: 0 0 12px var(--purple); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .btn-primary { background: linear-gradient(135deg,#0ea5e9,#6366f1); border: none; color:#fff; cursor:pointer; border-radius:8px; padding:8px 18px; font-size:14px; transition:opacity .2s; }
+  .btn-primary:hover { opacity:.85; }
+  .badge-red { background:#7f1d1d; color:#fca5a5; padding:2px 8px; border-radius:12px; font-size:11px; }
+  .badge-orange { background:#7c2d12; color:#fdba74; padding:2px 8px; border-radius:12px; font-size:11px; }
+  .badge-green { background:#064e3b; color:#6ee7b7; padding:2px 8px; border-radius:12px; font-size:11px; }
+  .badge-blue { background:#1e3a8a; color:#93c5fd; padding:2px 8px; border-radius:12px; font-size:11px; }
+  .tab-btn { background:transparent; border:1px solid var(--border); color:#94a3b8; cursor:pointer; border-radius:8px; padding:7px 16px; font-size:13px; transition:all .2s; }
+  .tab-btn.active { background:linear-gradient(135deg,#0ea5e9,#6366f1); color:#fff; border-color:transparent; }
+  .tab-btn:hover:not(.active) { border-color:#0ea5e9; color:#0ea5e9; }
+  select, input { background:#0a0e1a; border:1px solid var(--border); color:#e2e8f0; border-radius:8px; padding:6px 10px; font-size:13px; }
+  select:focus, input:focus { outline:2px solid var(--cyan); }
+  #ticker-wrap { background:#0a1628; border-bottom:1px solid var(--border); padding:6px 0; overflow:hidden; white-space:nowrap; }
+  #ticker-inner { display:inline-block; animation:ticker 35s linear infinite; }
+  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  .ticker-item { display:inline-block; margin:0 24px; font-size:12px; }
+  .up { color:#10b981; } .dn { color:#ef4444; }
+  #map { height:420px; border-radius:10px; }
+  .module { display:none; } .module.active { display:block; }
+  .score-bar { height:6px; border-radius:3px; background:#1e3a5f; overflow:hidden; margin-top:4px; }
+  .score-fill { height:100%; border-radius:3px; transition:width .6s; }
+  .country-card { background:#0a1628; border:1px solid var(--border); border-radius:10px; padding:14px; transition:border-color .2s; cursor:pointer; }
+  .country-card:hover { border-color:var(--cyan); }
+  .risk-card { border-left:3px solid; padding:12px 14px; border-radius:0 8px 8px 0; background:#0a1628; margin-bottom:10px; }
+  .news-card { background:#0a1628; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#0a0e1a; }
+  ::-webkit-scrollbar-thumb { background:#1e3a5f; border-radius:3px; }
+  .radar-chart-container { position:relative; height:220px; }
+  .freight-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:640px){ .freight-grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<!-- TICKER BAR -->
+<div id="ticker-wrap">
+  <div id="ticker-inner">
+    <span class="ticker-item">●伦敦金 <span class="up">$4,482</span>/oz</span>
+    <span class="ticker-item">€EUR/CNY <span id="t-eur">7.89</span></span>
+    <span class="ticker-item">$USD/CNY <span id="t-usd">6.79</span></span>
+    <span class="ticker-item">£GBP/CNY <span id="t-gbp">9.12</span></span>
+    <span class="ticker-item">●布伦特原油 <span class="up">$76.4</span>/桶</span>
+    <span class="ticker-item">■SCFI综合 <span class="up">1,847</span> <span class="up">+2.3%</span></span>
+    <span class="ticker-item">●纳斯达克 <span class="up">19,842</span> <span class="up">+0.8%</span></span>
+    <span class="ticker-item">●上证指数 <span class="dn">3,312</span> <span class="dn">-0.3%</span></span>
+    <span class="ticker-item">●伦敦金 <span class="up">$4,482</span>/oz</span>
+    <span class="ticker-item">€EUR/CNY <span>7.89</span></span>
+    <span class="ticker-item">$USD/CNY <span>6.79</span></span>
+    <span class="ticker-item">£GBP/CNY <span>9.12</span></span>
+    <span class="ticker-item">●布伦特原油 <span class="up">$76.4</span>/桶</span>
+    <span class="ticker-item">■SCFI综合 <span class="up">1,847</span> <span class="up">+2.3%</span></span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header style="background:linear-gradient(180deg,#0d1b3e 0%,#0a0e1a 100%); border-bottom:1px solid var(--border); padding:16px 24px;">
+  <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 style="margin:0;font-size:22px;font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        🌐 全球跨境情报平台
+      </h1>
+      <p style="margin:4px 0 0;font-size:12px;color:#64748b;">Accio BP · 覆盖35国 · AI赋能 · 实时数据</p>
+    </div>
+    <nav style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab-btn active" onclick="switchModule('think-tank')">🌎 跨境智库</button>
+      <button class="tab-btn" onclick="switchModule('toolbox')">🔧 工具箱</button>
+      <button class="tab-btn" onclick="switchModule('compass')">🎯 市场罗盘</button>
+      <button class="tab-btn" onclick="switchModule('riskmap')">🗺 全球风险地图</button>
+      <button class="tab-btn" onclick="switchModule('warning')">⚠ 风险预警看板</button>
+      <button class="tab-btn" onclick="switchModule('intel')">📰 实时情报流</button>
+    </nav>
+  </div>
+</header>
+
+<main style="max-width:1400px;margin:0 auto;padding:24px 16px;">
+
+<!-- ===================== MODULE 1: THINK TANK ===================== -->
+<div id="mod-think-tank" class="module active">
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;" class="glow-cyan">📚 跨境智库 · 国别情报中心</h2>
+    <p style="color:#64748b;font-size:13px;margin:0;">35国完整数据 · 综合评分算法 · AI需求分析 · 行业趋势</p>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="tab-btn active" id="tt-tab-report" onclick="switchTTTab('report')">🏴 国别报告</button>
+    <button class="tab-btn" id="tt-tab-demand" onclick="switchTTTab('demand')">🎯 需求分析</button>
+    <button class="tab-btn" id="tt-tab-trend" onclick="switchTTTab('trend')">📈 行业趋势</button>
+  </div>
+
+  <!-- Country Report Panel -->
+  <div id="tt-report" class="tt-panel">
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <select id="category-select" style="min-width:160px;" onchange="renderCountryCards()">
+        <option value="">选择产品品类</option>
+        <option value="消费电子">消费电子</option>
+        <option value="家用电器">家用电器</option>
+        <option value="家具">家具</option>
+        <option value="玩具">玩具</option>
+        <option value="服装及配饰">服装及配饰</option>
+        <option value="美妆">美妆</option>
+        <option value="医疗器械">医疗器械</option>
+        <option value="户外储能">户外储能</option>
+        <option value="新能源汽车">新能源汽车</option>
+        <option value="灯具照明">灯具照明</option>
+        <option value="食品及饮料">食品及饮料</option>
+        <option value="母婴">母婴</option>
+        <option value="宠物用品">宠物用品</option>
+        <option value="五金工具">五金工具</option>
+      </select>
+      <select id="region-filter" style="min-width:140px;" onchange="renderCountryCards()">
+        <option value="">全部区域</option>
+        <option value="欧洲">欧洲</option>
+        <option value="亚洲">亚洲</option>
+        <option value="北美">北美</option>
+        <option value="拉美">拉美</option>
+        <option value="大洋洲">大洋洲</option>
+        <option value="砍沙">中东</option>
+      </select>
+      <button class="btn-primary" onclick="renderCountryCards()">📊 生成评分</button>
+    </div>
+    <div id="country-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:#475569;">
+        <div style="font-size:32px;margin-bottom:8px;">🌍</div>
+        <p>选择品类后生成35国评分报告</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demand Analysis Panel -->
+  <div id="tt-demand" class="tt-panel" style="display:none;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+      <div class="card" style="padding:20px;">
+        <div style="font-size:28px;margin-bottom:8px;">💎</div>
+        <h3 style="margin:0 0 4px;color:var(--cyan);">首选利润国</h3>
+        <p style="color:#64748b;font-size:12px;margin-bottom:12px;">按人均GDP排序</p>
+        <div id="top-profit-list"></div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div style="font-size:28px;margin-bottom:8px;">🌊</div>
+        <h3 style="margin:0 0 4px;color:var(--purple);">首选规模国</h3>
+        <p style="color:#64748b;font-size:12px;margin-bottom:12px;">按人口体量排序</p>
+        <div id="top-scale-list"></div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div style="font-size:28px;margin-bottom:8px;">🚀</div>
+        <h3 style="margin:0 0 4px;color:var(--green);">首选蓝海国</h3>
+        <p style="color:#64748b;font-size:12px;margin-bottom:12px;">新兴市场综合评分</p>
+        <div id="top-blue-list"></div>
+      </div>
+    </div>
+    <div class="card" style="padding:20px;margin-top:16px;">
+      <h3 style="margin:0 0 12px;font-size:16px;">🛡 行业合规转型建议</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;" id="compliance-tips"></div>
+    </div>
+  </div>
+
+  <!-- Trend Panel -->
+  <div id="tt-trend" class="tt-panel" style="display:none;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;" id="trend-cards"></div>
+  </div>
+</div>
+
+<!-- ===================== MODULE 2: TOOLBOX ===================== -->
+<div id="mod-toolbox" class="module">
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;" class="glow-purple">🔧 工具箱 · 出海必备</h2>
+    <p style="color:#64748b;font-size:13px;margin:0;">合规查询 · 关税计算 · AI趋势选品 三合一工具</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="tab-btn active" id="tool-tab-comply" onclick="switchToolTab('comply')">✅ 合规查询</button>
+    <button class="tab-btn" id="tool-tab-tariff" onclick="switchToolTab('tariff')">💵 关税计算</button>
+    <button class="tab-btn" id="tool-tab-trending" onclick="switchToolTab('trending')">🔥 AI趋势选品</button>
+  </div>
+
+  <div id="tool-comply" class="tool-panel">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:start;" class="md-grid">
+      <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 14px;font-size:15px;">📋 输入参数</h3>
+        <div style="margin-bottom:12px;"><label style="font-size:12px;color:#94a3b8;">产品品类</label><br>
+          <select id="comply-cat" style="width:100%;margin-top:4px;">
+            <option>消费电子</option><option>家用电器</option><option>食品及饮料</option>
+            <option>服装及配饰</option><option>玩具</option><option>医疗器械</option>
+            <option>家具</option><option>美妆</option><option>汽车零配件</option>
+          </select>
+        </div>
+        <div style="margin-bottom:14px;"><label style="font-size:12px;color:#94a3b8;">目标市场</label><br>
+          <select id="comply-mkt" style="width:100%;margin-top:4px;">
+            <option value="US">美国</option><option value="CA">加拿大</option>
+            <option value="EU">欧盟(通用)</option><option value="GB">英国</option>
+            <option value="DE">德国</option><option value="FR">法国</option>
+            <option value="JP">日本</option><option value="KR">韩国</option>
+            <option value="AU">澳大利亚</option><option value="IN">印度</option>
+            <option value="SA">沙特/GCC</option><option value="AE">阿联酋</option>
+            <option value="BR">巴西</option><option value="MX">墨西哥</option>
+          </select>
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="runComply()">🔍 查询合规</button>
+      </div>
+      <div class="card" style="padding:20px;" id="comply-result">
+        <p style="color:#475569;text-align:center;padding:40px 0;">选择品类和市场后点击查询</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="tool-tariff" class="tool-panel" style="display:none;">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:start;" class="md-grid">
+      <div class="card" style="padding:20px;">
+        <h3 style="margin:0 0 14px;font-size:15px;">📅 输入参数</h3>
+        <div style="margin-bottom:10px;"><label style="font-size:12px;color:#94a3b8;">HS编码（前4位）</label><br>
+          <input id="hs-code" placeholder="如：8471" style="width:100%;margin-top:4px;"></div>
+        <div style="margin-bottom:10px;"><label style="font-size:12px;color:#94a3b8;">目的国</label><br>
+          <select id="tariff-country" style="width:100%;margin-top:4px;">
+            <option value="US">美国</option><option value="EU">欧盟</option>
+            <option value="GB">英国</option><option value="JP">日本</option>
+            <option value="AU">澳大利亚</option><option value="CA">加拿大</option>
+            <option value="IN">印度</option><option value="KR">韩国</option>
+            <option value="SA">沙特阿拉伯</option><option value="BR">巴西</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px;"><label style="font-size:12px;color:#94a3b8;">FOB价格 (USD)</label><br>
+          <input id="fob" type="number" placeholder="如：10000" style="width:100%;margin-top:4px;"></div>
+        <div style="margin-bottom:10px;"><label style="font-size:12px;color:#94a3b8;">运费 (USD)</label><br>
+          <input id="freight" type="number" placeholder="如：800" style="width:100%;margin-top:4px;"></div>
+        <div style="margin-bottom:14px;"><label style="font-size:12px;color:#94a3b8;">保险费 (USD)</label><br>
+          <input id="insurance" type="number" placeholder="如：50" style="width:100%;margin-top:4px;"></div>
+        <button class="btn-primary" style="width:100%;" onclick="calcTariff()">💵 计算关税</button>
+      </div>
+      <div class="card" style="padding:20px;" id="tariff-result">
+        <p style="color:#475569;text-align:center;padding:40px 0;">请在左侧填入参数后点击计算</p>
+        <div style="margin-top:20px;">
+          <h4 style="margin:0 0 10px;font-size:14px;color:#94a3b8;">📋 常用HS编码速查</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
+            <div style="background:#0a1628;border-radius:6px;padding:6px 10px;"><span style="color:#60a5fa;">8471</span> — 计算机</div>
+            <div style="background:#0a1628;border-radius:6px;padding:6px 10px;"><span style="color:#60a5fa;">8517</span> — 手机/通信</div>
+            <div style="background:#0a1628;border-radius:6px;padding:6px 10px;"><span style="color:#60a5fa;">9503</span> — 玩具</div>
+            <div style="background:#0a1628;border-radius:6px;padding:6px 10px;"><span style="color:#60a5fa;">6203</span> — 男装</div>
+            <div style="background:#0a1628;border-radius:6px;padding:6px 10px;"><span style="color:#60a5fa;">9401</span> — 座椅/家具</div>
+            <div style="background:#0a1628;border-radius:6px;padding:6px 10px;"><span style="color:#60a5fa;">3304</span> — 美妆</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tool-trending" class="tool-panel" style="display:none;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;" id="trending-grid"></div>
+  </div>
+</div>
+
+<!-- ===================== MODULE 3: COMPASS ===================== -->
+<div id="mod-compass" class="module">
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;" class="glow-cyan">🎯 市场罗盘 · 品类匹配</h2>
+    <p style="color:#64748b;font-size:13px;margin:0;">覆盖 35 国实时评分 · AI合规匹配</p>
+  </div>
+  <div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div><label style="font-size:12px;color:#94a3b8;">输入品类关键词</label><br>
+        <input id="compass-input" placeholder="如：户外储能、玩具、美妆" style="width:240px;margin-top:4px;"></div>
+      <button class="btn-primary" onclick="runCompass()">🚀 开启罗盘</button>
+    </div>
+  </div>
+  <div id="compass-result" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#475569;">
+      <div style="font-size:48px;">🧭</div>
+      <p>智库分析中，输入品类后开启罗盘...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODULE 4: RISK MAP ===================== -->
+<div id="mod-riskmap" class="module">
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;">🗺 全球风险地图</h2>
+    <p style="color:#64748b;font-size:13px;margin:0;">实时标注主要航线状态、热点风险区域与海峡通道</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="tab-btn active" id="map-tab-sea" onclick="toggleMapLayer('sea')">🚢 航运线路</button>
+    <button class="tab-btn" id="map-tab-air" onclick="toggleMapLayer('air')">✈ 空运线路</button>
+    <button class="tab-btn" id="map-tab-risk" onclick="toggleMapLayer('risk')">⚠ 风险热点</button>
+  </div>
+  <div style="display:grid;grid-template-columns:3fr 1fr;gap:16px;align-items:start;">
+    <div>
+      <div id="map"></div>
+    </div>
+    <div>
+      <div class="stat-card" style="margin-bottom:10px;">
+        <div style="font-size:24px;font-weight:700;color:var(--orange);">1,894</div>
+        <div style="font-size:12px;color:#94a3b8;">SCFI综合运价指数</div>
+        <div class="up" style="font-size:12px;">+2.3%</div>
+      </div>
+      <div class="stat-card" style="margin-bottom:10px;">
+        <div style="font-size:24px;font-weight:700;color:var(--cyan);">67.2%</div>
+        <div style="font-size:12px;color:#94a3b8;">全球准班率</div>
+        <div class="dn" style="font-size:12px;">-5.1pp</div>
+      </div>
+      <div class="stat-card" style="margin-bottom:10px;">
+        <div style="font-size:24px;font-weight:700;color:var(--yellow);">4.7天</div>
+        <div style="font-size:12px;color:#94a3b8;">平均港口延误</div>
+        <div style="font-size:12px;color:#f97316;">偏高</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:24px;font-weight:700;color:var(--red);">3</div>
+        <div style="font-size:12px;color:#94a3b8;">高风险航线</div>
+        <div class="badge-red" style="margin-top:4px;">红色预警</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;">
+    <div class="card" style="padding:16px;">
+      <h4 style="margin:0 0 12px;font-size:14px;">📊 近90日 SCFI 运价走势</h4>
+      <canvas id="scfi-chart" height="120"></canvas>
+    </div>
+    <div class="card" style="padding:16px;">
+      <h4 style="margin:0 0 12px;font-size:14px;">📦 全球运价看板 (近90天均价)</h4>
+      <div class="freight-grid" id="freight-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODULE 5: WARNING ===================== -->
+<div id="mod-warning" class="module">
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;">⚠ AI 风险预警看板</h2>
+    <p style="color:#64748b;font-size:13px;margin:0;">实时监测能源、航运、外汇、地缘四大维度，AI自动评分</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;" id="risk-scores"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>
+      <div style="margin-bottom:14px;" id="red-warnings"></div>
+      <div style="margin-bottom:14px;" id="orange-warnings"></div>
+      <div id="green-opps"></div>
+    </div>
+    <div>
+      <div class="card" style="padding:16px;margin-bottom:14px;">
+        <h4 style="margin:0 0 12px;font-size:14px;">⛽ 汇率实时走势 (vs CNY)</h4>
+        <canvas id="fx-chart" height="140"></canvas>
+      </div>
+      <div class="card" style="padding:16px;">
+        <h4 style="margin:0 0 12px;font-size:14px;">⛶ 大宗商品价格雷达</h4>
+        <div class="radar-chart-container"><canvas id="commodity-radar"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <p style="color:#475569;font-size:11px;margin-top:14px;">数据更新: 2026-Q2 | 风险评分基于AI多维度综合评估</p>
+</div>
+
+<!-- ===================== MODULE 6: INTEL ===================== -->
+<div id="mod-intel" class="module">
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;">📰 全球贸易实时情报</h2>
+    <p style="color:#64748b;font-size:13px;margin:0;">聚合全球权威财经资讯 · AI评分风险等级</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab-btn active" id="intel-tab-all" onclick="filterIntel('all')">全部</button>
+      <button class="tab-btn" id="intel-tab-trade" onclick="filterIntel('trade')">贸易</button>
+      <button class="tab-btn" id="intel-tab-energy" onclick="filterIntel('energy')">能源</button>
+      <button class="tab-btn" id="intel-tab-shipping" onclick="filterIntel('shipping')">航运</button>
+      <button class="tab-btn" id="intel-tab-policy" onclick="filterIntel('policy')">政策</button>
+    </div>
+    <div>
+      <span style="font-size:12px;color:#64748b;">数据更新: <span id="intel-time"></span></span>
+      <span style="font-size:12px;color:#64748b;margin-left:12px;">来源: Reuters · Bloomberg · WTO · IMF · USTR · EU</span>
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-bottom:16px;" onclick="loadIntel()">🔄 刷新情报流</button>
+  <div id="intel-list"></div>
+</div>
+
+</main>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
