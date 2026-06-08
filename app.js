@@ -15,6 +15,15 @@ function switchModule(id) {
   if (id === 'think-tank') initDemandPanels();
 }
 
+// ---- Toolbox Tab ----
+function switchToolTab(tab) {
+  document.querySelectorAll('.tool-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[id^="tool-tab-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('tool-' + tab).style.display = 'block';
+  document.getElementById('tool-tab-' + tab).classList.add('active');
+  if (tab === 'trending') initTrending();
+}
+
 // ---- Think Tank Tab ----
 function switchTTTab(tab) {
   document.querySelectorAll('.tt-panel').forEach(p => p.style.display = 'none');
